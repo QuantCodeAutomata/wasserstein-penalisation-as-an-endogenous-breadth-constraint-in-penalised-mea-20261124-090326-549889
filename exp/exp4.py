@@ -68,7 +68,7 @@ def plot(table: pd.DataFrame, out_path: str) -> None:
     fig, ax = plt.subplots(figsize=(6, 4))
     deltas = sorted(table["delta"].unique())
     data = [table.loc[table["delta"] == d, "a"].to_numpy() for d in deltas]
-    ax.boxplot(data, labels=[f"{d:.0e}" for d in deltas], showfliers=False)
+    ax.boxplot(data, tick_labels=[f"{d:.0e}" for d in deltas], showfliers=False)
     ax.axhline(1.0, linestyle="--", color="black", label="feasibility boundary a = 1")
     ax.set_xlabel(r"Wasserstein radius $\delta$")
     ax.set_ylabel(r"$a = \sqrt{\delta}/s(\hat{\mu})$")
