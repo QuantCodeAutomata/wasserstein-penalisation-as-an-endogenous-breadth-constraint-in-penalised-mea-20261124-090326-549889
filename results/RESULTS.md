@@ -57,22 +57,23 @@ Files: `results/exp3_figure1_table.csv`, `results/exp3_figure1.png`.
 
 | δ | N_eff (ours) | N_eff (paper) | verdict |
 |---|---|---|---|
-| 1e-9 | 4.07 | 5 | partially reproduced |
-| 1e-6 | 4.62 | 6 | partially reproduced |
-| 1e-5 | 6.25 | 7 | reproduced |
-| 1e-4 | 14.19 | 13 | reproduced |
-| 1e-3 | 85.99 | 53 | not reproduced (value), monotonicity reproduced |
+| 1e-9 | 4.86 | 5 | reproduced |
+| 1e-6 | 5.35 | 6 | partially reproduced |
+| 1e-5 | 6.29 | 7 | partially reproduced |
+| 1e-4 | 12.90 | 13 | reproduced |
+| 1e-3 | 84.01 | 53 | not reproduced (value), monotonicity reproduced |
 
 N_eff increases monotonically with δ across the full grid (Proposition 4.2),
 which is the qualitative claim the figure makes. The paper gives no
 distributional details for the simulated panel beyond N=255, T=60, λ=10
-(Sec. 4); the data-generating process used here is the Section 6.4 five-factor
-design with the sparse alpha switched off (documented in
-`data/generate_synthetic.py`). With this substitute DGP the low-δ end of the
-curve (δ≤1e-6) is systematically about 1-2 effective names below the paper's
-table, and the top of the grid (δ=1e-3) overshoots by about 1.6×, because the
-unspecified factor-loading and idiosyncratic-volatility scale fixes how
-quickly the norm penalty trades off against the quadratic risk term.
+(Sec. 4); the data-generating process used here is the same Section 6.4
+five-factor design used for the known-truth simulation, with the sparse alpha
+switched off (documented in `data/generate_synthetic.py`). With this
+substitute DGP the curve is close to the paper's table from δ=10⁻⁹ to 10⁻⁴
+(within about 11%), but overshoots by about 1.6× at the top of the grid
+(δ=10⁻³), because the unspecified factor-loading and idiosyncratic-volatility
+scale of the paper's own simulated panel fixes how quickly the norm penalty
+trades off against the quadratic risk term as δ grows large.
 
 ## Experiment 4 — Calibration ratio a = √δ/s(μ̂) (Figure 2)
 
