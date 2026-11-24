@@ -150,4 +150,6 @@ EXP9_DESIGN_GRID_RUN = [
 ]  # reduced grid actually executed, see results/RESULTS.md
 EXP9_VALIDATION_HOLD_FRACTION = 0.5  # not specified in the paper: split of T used to validate the penalised-robust radius
 EXP9_VALIDATION_DELTA_GRID = [1e-7, 1e-6, 1e-5, 1e-4, 1e-3]  # candidate radii scanned when selecting delta by validation
+EXP9_CANONICAL_DELTA = 1e-6  # radius used for "exact robust" and "breadth-matched MV", matching Tables 5-7's main radius
+EXP9_WIDE_DELTA = 1e-3  # "wide radius" penalised-robust variant, Sec 6.4; the paper names it without a numeric value
 EXP9_SEED = 1234

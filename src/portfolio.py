@@ -18,6 +18,15 @@ from sklearn.covariance import LedoitWolf
 _SOLVER_KWARGS = {"solver": cp.CLARABEL}
 
 
+def utility(mu: np.ndarray, sigma: np.ndarray, phi: np.ndarray, lam: float) -> float:
+    """Mean-variance utility U(phi) = phi'mu - lam*phi'Sigma*phi (Sec 2.1),
+    evaluated either in-sample (mu_hat, Sigma_hat) or at the population
+    parameters (mu_true, Sigma_true) to obtain the attainable utility of
+    Section 6.4's known-truth simulation."""
+    phi = np.asarray(phi, dtype=float)
+    return float(phi @ mu - lam * phi @ sigma @ phi)
+
+
 def n_eff(weights: np.ndarray) -> float:
     """Effective number of holdings N_eff(phi) = 1 / sum(phi_i^2) = 1/||phi||_2^2."""
     weights = np.asarray(weights, dtype=float)
