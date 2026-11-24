@@ -85,9 +85,9 @@ def diag_min_variance_closed_form(kappa0: float, v: float, n: int) -> np.ndarray
 def ledoit_wolf_cov(returns: np.ndarray) -> np.ndarray:
     """Ledoit-Wolf shrinkage covariance estimate (Ledoit and Wolf, 2004).
 
-    # skfolio / scikit-learn LedoitWolf: verified via Context7 that
-    # sklearn.covariance.LedoitWolf implements the Ledoit-Wolf (2004) shrinkage
-    # estimator the paper cites; used directly rather than re-derived.
+    Uses ``sklearn.covariance.LedoitWolf``, which implements the Ledoit-Wolf
+    (2004) shrinkage estimator the paper cites (Sec. 6.1), directly rather
+    than re-deriving it.
     """
     return LedoitWolf().fit(returns).covariance_
 
