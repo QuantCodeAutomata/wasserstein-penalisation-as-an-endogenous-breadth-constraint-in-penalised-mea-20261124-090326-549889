@@ -204,7 +204,21 @@ def _psd_sqrt(sigma: np.ndarray) -> np.ndarray:
     return eigvecs @ np.diag(np.sqrt(eigvals)) @ eigvecs.T
 
 
+class InfeasibleProblem(RuntimeError):
+    """Raised when a constrained portfolio problem has no feasible point.
+
+    Section 4 shows the return-floored problem's feasibility depends on the
+    ratio a = sqrt(delta)/s(mu_hat) (Figure 2): at a large enough radius the
+    return floor and the simplex constraint can be jointly infeasible. This is
+    a property of the problem, not a solver defect, so callers that can meet
+    an infeasible window (e.g. return-floored or exact-robust solves at a wide
+    radius) must catch it explicitly rather than have it masked.
+    """
+
+
 def _finalize(phi: cp.Variable, prob: cp.Problem) -> np.ndarray:
+    if prob.status in ("infeasible", "infeasible_inaccurate"):
+        raise InfeasibleProblem(f"solver status: {prob.status}")
     assert prob.status in ("optimal", "optimal_inaccurate"), f"solver failed: {prob.status}"
     weights = np.asarray(phi.value, dtype=float)
     weights = np.clip(weights, 0.0, None)  # clip tiny negative solver noise

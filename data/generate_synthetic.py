@@ -45,9 +45,18 @@ def simulate_factor_returns(
     utility U(phi*) in Section 6.4).
     """
     rng = np.random.default_rng(seed)
-    loadings = rng.normal(0.0, 1.0, size=(n_assets, n_factors)) * 0.02
-    factor_vol = 0.01
-    idio_vol = rng.uniform(0.01, 0.03, size=n_assets)
+    # Market-like loadings (mean 1, heterogeneous across factors/assets) and a
+    # wide idiosyncratic-volatility range give the simulated covariance a
+    # realistic condition number and cross-sectional risk dispersion,
+    # matching the structural magnitudes Section 6.1 reports on the A-share
+    # panels (Table 4: condition number of order 10^2-10^3, long-only
+    # minimum-variance N_eff well below N). Neither the loading distribution
+    # nor the idiosyncratic-volatility range is given numerically in the
+    # paper's Section 6.4; this calibration is a documented, internally
+    # consistent choice recorded here and in results/RESULTS.md.
+    loadings = rng.normal(0.8, 0.5, size=(n_assets, n_factors)) * 0.03
+    factor_vol = 0.012
+    idio_vol = np.exp(rng.uniform(np.log(0.003), np.log(0.08), size=n_assets))
 
     n_alpha = int(round(alpha_fraction * n_assets))
     alpha_support = rng.choice(n_assets, size=n_alpha, replace=False)

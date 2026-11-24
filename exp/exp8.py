@@ -74,7 +74,15 @@ def evaluate_window(
     phi_robust = pf.penalized_robust_portfolio(mu_hat, sigma_hat, lam, delta)
     h_star = float(np.linalg.norm(phi_robust, 2))
     phi_bm = pf.breadth_matched_ridge(mu_hat, sigma_hat, lam, delta, h_star)
-    phi_rm = pf.return_floored_portfolio(mu_hat, sigma_hat, lam, delta, r0)
+    try:
+        phi_rm = pf.return_floored_portfolio(mu_hat, sigma_hat, lam, delta, r0)
+    except pf.InfeasibleProblem:
+        # Sec 4 (Figure 2): the return-floored constraint phi'mu - sqrt(delta)
+        # ||phi||_2 >= r0 can become infeasible on the simplex once the radius
+        # is wide relative to the window's own return spread. Such windows are
+        # dropped from the return-matched comparison and counted (see
+        # results/RESULTS.md) rather than masked by a fallback portfolio.
+        phi_rm = None
     phi_ew = pf.equally_weighted(sigma_hat.shape[0])
 
     weights_by_strategy = {
@@ -87,11 +95,15 @@ def evaluate_window(
     results: dict[str, dict[str, object]] = {}
     new_prev_weights: dict[str, np.ndarray] = {}
     for name, weights in weights_by_strategy.items():
+        if weights is None:
+            continue  # return-matched window dropped: infeasible return floor
         gross = oos_daily_returns(weights, test)
         turnover = l1_turnover(weights, prev_weights.get(name))
         net = net_daily_returns(gross, turnover, tc_bps, hold)
         results[name] = {"weights": weights, "gross": gross, "net": net, "turnover": turnover}
         new_prev_weights[name] = weights
+    if "return_matched" not in results:
+        new_prev_weights["return_matched"] = prev_weights.get("return_matched")
     return results, new_prev_weights
 
 
@@ -108,16 +120,29 @@ def run() -> pd.DataFrame:
             prev_weights: dict[str, np.ndarray | None] = {name: None for name in STRATEGIES}
             gross_rents: dict[str, list[float]] = {bench: [] for bench in BENCHMARKS}
             net_rents: dict[str, list[float]] = {bench: [] for bench in BENCHMARKS}
+            n_windows = 0
+            n_infeasible_return_matched = 0
 
             for _w, mu_hat, sigma_hat, test in windows:
+                n_windows += 1
                 results, prev_weights = evaluate_window(
                     mu_hat, sigma_hat, test, EXP8_LAMBDA, delta, EXP8_HOLD_DAYS, EXP8_TC_BPS, prev_weights
                 )
+                if "return_matched" not in results:
+                    n_infeasible_return_matched += 1
                 robust_gross_mean = float(np.mean(results["robust"]["gross"]))
                 robust_net_mean = float(np.mean(results["robust"]["net"]))
                 for bench in BENCHMARKS:
+                    if bench not in results:
+                        continue
                     gross_rents[bench].append(robust_gross_mean - float(np.mean(results[bench]["gross"])))
                     net_rents[bench].append(robust_net_mean - float(np.mean(results[bench]["net"])))
+
+            if n_infeasible_return_matched:
+                print(
+                    f"panel {label} delta={delta}: {n_infeasible_return_matched}/{n_windows} "
+                    "windows dropped for return_matched (infeasible return floor, Sec 4)"
+                )
 
             for bench in BENCHMARKS:
                 for cost_regime, series in (("gross", gross_rents[bench]), ("net", net_rents[bench])):
