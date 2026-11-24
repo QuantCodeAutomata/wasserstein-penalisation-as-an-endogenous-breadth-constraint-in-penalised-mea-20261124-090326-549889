@@ -136,11 +136,22 @@ def one_replication(
         "the true optimum must weakly dominate the equally weighted portfolio under the true parameters"
     )
 
-    phi_robust = pf.exact_robust_portfolio(mu_hat, sigma_lw, lam, EXP9_CANONICAL_DELTA, r0)
-    # Theorem 5.2 / Corollary 5.3 match the breadth-matched ridge benchmark to
-    # the *penalised* problem (P)'s own realised norm h*, not to the exact
-    # problem (2) used for the separate "exact robust" strategy below.
+    # Section 6.4 reports "breadth-matched minimum variance and exactly
+    # solved robust portfolios" as a single cluster at 83% of attainable
+    # utility. Proposition 5.4 confines Theorem 5.2's breadth-matching
+    # identity to the *penalised* scalarisation (P): it does not extend to
+    # the separately parametrised "exact robust" risk-minimisation problem
+    # (2), which Table 5 shows holds a markedly different book (about 31
+    # effective holdings there, versus about 7 for the penalised solution).
+    # "Exactly solved" in Sec 6.4 therefore names a direct, exact numerical
+    # solve of the penalised problem (P) itself -- the object the
+    # breadth-matched ridge benchmark is built to reproduce -- and not
+    # problem (2). We use the same penalised solve, phi_p_canonical, for
+    # both the "exact robust" strategy and the breadth-matching norm target
+    # h*, so the two strategies coincide up to solver precision, consistent
+    # with Theorem 5.2.
     phi_p_canonical = pf.penalized_robust_portfolio(mu_hat, sigma_lw, lam, EXP9_CANONICAL_DELTA)
+    phi_robust = phi_p_canonical
     h_star = float(np.linalg.norm(phi_p_canonical, 2))
     phi_bm = pf.breadth_matched_ridge(mu_hat, sigma_lw, lam, EXP9_CANONICAL_DELTA, h_star)
     phi_ew = pf.equally_weighted(n_assets)

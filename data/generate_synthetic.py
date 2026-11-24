@@ -45,25 +45,35 @@ def simulate_factor_returns(
     utility U(phi*) in Section 6.4).
     """
     rng = np.random.default_rng(seed)
-    # Market-like loadings (mean 1, heterogeneous across factors/assets) and a
-    # wide idiosyncratic-volatility range give the simulated covariance a
-    # realistic condition number and cross-sectional risk dispersion,
-    # matching the structural magnitudes Section 6.1 reports on the A-share
-    # panels (Table 4: condition number of order 10^2-10^3, long-only
-    # minimum-variance N_eff well below N). Neither the loading distribution
-    # nor the idiosyncratic-volatility range is given numerically in the
-    # paper's Section 6.4; this calibration is a documented, internally
-    # consistent choice recorded here and in results/RESULTS.md.
-    loadings = rng.normal(0.8, 0.5, size=(n_assets, n_factors)) * 0.03
-    factor_vol = 0.012
-    idio_vol = np.exp(rng.uniform(np.log(0.003), np.log(0.08), size=n_assets))
+    # The first factor is a common "market" factor with loadings common
+    # across assets (mean 1, moderate dispersion) at a realistic market
+    # daily volatility; the remaining factors are weaker secondary factors.
+    # This dominant-factor structure, together with a realistic
+    # idiosyncratic-volatility range, reproduces the structural magnitudes
+    # Section 6.1 reports on the A-share panels (Table 4: Ledoit-Wolf
+    # condition number of order 10^2-10^3, long-only minimum-variance N_eff
+    # well below N) after 60-day Ledoit-Wolf shrinkage: without a dominant
+    # factor, shrinkage at N=255, T=60 flattens the covariance towards a
+    # near-diagonal matrix and the minimum-variance portfolio stays close to
+    # equally weighted, which the paper's Table 4 does not show. Neither the
+    # loading distribution nor the idiosyncratic-volatility range is given
+    # numerically in the paper's Section 6.4; this calibration is a
+    # documented, internally consistent choice recorded here and in
+    # results/RESULTS.md.
+    market_loading = rng.normal(1.0, 0.3, size=n_assets)
+    market_vol = 0.015  # 1.5% daily market-factor volatility
+    secondary_loadings = rng.normal(0.0, 0.4, size=(n_assets, n_factors - 1))
+    secondary_vol = 0.006  # 0.6% daily volatility for the secondary factors
+    loadings = np.column_stack([market_loading, secondary_loadings])
+    factor_vol = np.concatenate([[market_vol], np.full(n_factors - 1, secondary_vol)])
+    idio_vol = np.exp(rng.uniform(np.log(0.01), np.log(0.03), size=n_assets))
 
     n_alpha = int(round(alpha_fraction * n_assets))
     alpha_support = rng.choice(n_assets, size=n_alpha, replace=False)
     mu_true = np.zeros(n_assets)
     mu_true[alpha_support] = alpha_scale_c * idio_vol[alpha_support] / np.sqrt(t_obs)
 
-    sigma_true = loadings @ loadings.T * factor_vol**2 + np.diag(idio_vol**2)
+    sigma_true = (loadings * factor_vol**2) @ loadings.T + np.diag(idio_vol**2)
 
     if heavy_tailed:
         factor_draws = student_t_innovations((t_obs, n_factors), rng) * factor_vol
